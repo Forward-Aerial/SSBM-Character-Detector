@@ -11,5 +11,5 @@ All listed dependencies are for Ubuntu 20.04
 3. Everything in `requirements.txt`
 4. Also, there's some sort of bug that requires `pycocotools` to be manually installed from a Git repo, so also do `pip install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'`
 
-The notebook to look at is `torchvision_finetuning_instance_segmentation.ipynb`, modified from [this tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html#testing-forward-method-optional).
+Just run `main.py`, which is modified from [this tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html#testing-forward-method-optional).
 For those who care, it creates an F-RCNN model with a ResNet-50 backbone (that uses a Feature Pyramid Network).
