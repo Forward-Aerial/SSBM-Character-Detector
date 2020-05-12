@@ -35,7 +35,7 @@ dataset = CocoDetection(
             T.ToFRCNNFormat(),
             T.RandomGrayscale(),
             T.RandomHorizontalFlip(),
-            T.RandomVerticalFlip(),
+            # T.RandomVerticalFlip(),
             T.ToTensor(),
         ]
     ),
@@ -82,7 +82,7 @@ optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
 # 10x every 3 epochs
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 # %%
-num_epochs = 15
+num_epochs = 10
 
 for epoch in range(num_epochs):
     # train for one epoch, printing every 10 iterations
@@ -123,4 +123,4 @@ for box, label, score in zip(
     ax.text(min_x, min_y, dataset.coco.cats[label.item()]["name"], c="r")
 
 # %%
-torch.save(model.state_dict(), "detector.pytorch")
+torch.save(model, "detector.pt")

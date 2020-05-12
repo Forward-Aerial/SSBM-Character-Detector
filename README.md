@@ -10,6 +10,7 @@ All listed dependencies are for Ubuntu 20.04
 2. CUDA 10.0
 3. Everything in `requirements.txt`
 4. Also, there's some sort of bug that requires `pycocotools` to be manually installed from a Git repo, so also do `pip install 'git+https://github.com/cocodataset/cocoapi.git#subdirectory=PythonAPI'`
+5. `pip install git+git://github.com/waspinator/coco.git@2.1.0`
 
 Just run `main.py`, which is modified from [this tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html#testing-forward-method-optional).
 For those who care, it creates an F-RCNN model with a ResNet-50 backbone (that uses a Feature Pyramid Network).
