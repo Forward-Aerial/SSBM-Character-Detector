@@ -1,12 +1,13 @@
 # %%
 import matplotlib.patches as patches
+import random
 import torch
 import torchvision
 from matplotlib import pyplot as plt
 from PIL import Image
-from torchvision.datasets import CocoDetection
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
+import dataset
 import transforms as T
 import utils
 
@@ -27,23 +28,17 @@ def get_detection_model(classes: int):
 
 # %%
 # use our dataset and defined transformations
-dataset = CocoDetection(
+dataset = dataset.FRCNNFrameDataset(
     "data/images",
     "data/annotations/instances_default.json",
     transforms=T.Compose(
-        [
-            T.ToFRCNNFormat(),
-            T.RandomGrayscale(),
-            T.RandomHorizontalFlip(),
-            # T.RandomVerticalFlip(),
-            T.ToTensor(),
-        ]
+        [T.RandomGrayscale(), T.RandomHorizontalFlip(), T.ToTensor(),]
     ),
 )
 
 # split the dataset in train and test set
 torch.manual_seed(1)
-lengths = [len(dataset) - 50, 50]
+lengths = [round(len(dataset) * 0.8), round(len(dataset) * 0.2)]
 dataset_train, dataset_test = torch.utils.data.random_split(dataset, lengths)
 
 # define training and validation data loaders
@@ -82,7 +77,7 @@ optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
 # 10x every 3 epochs
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 # %%
-num_epochs = 10
+num_epochs = 7
 
 for epoch in range(num_epochs):
     # train for one epoch, printing every 10 iterations
@@ -93,9 +88,8 @@ for epoch in range(num_epochs):
     evaluate(model, data_loader_test, device=device)
 
 # %%
-img = Image.open("-22f2Dp1Spo.003.jpg")
+img_tensor, test_target = dataset_test[random.randint(0, len(dataset_test))]
 to_tensor = T.ToTensor()
-img_tensor, _ = to_tensor(img, {})
 # put the model in evaluation mode
 model.eval()
 with torch.no_grad():
@@ -105,22 +99,44 @@ with torch.no_grad():
 im = Image.fromarray(img_tensor.mul(255).permute(1, 2, 0).byte().numpy())
 
 # %%
-# Visualize bounding boxes
-fig, ax = plt.subplots(1, figsize=(12, 8))
-ax.imshow(im)
-for box, label, score in zip(
-    prediction[0]["boxes"], prediction[0]["labels"], prediction[0]["scores"].round()
+def visualize_bounding_boxes(
+    image: Image, boxes: torch.Tensor, labels: torch.Tensor, scores, color="r"
 ):
-    if not score.item():
-        continue
-    [min_x, min_y, max_x, max_y] = box.tolist()
-    width = max_x - min_x
-    height = max_y - min_y
-    rect = patches.Rectangle(
-        (min_x, min_y), width, height, linewidth=1, edgecolor="r", facecolor="none",
-    )
-    ax.add_patch(rect)
-    ax.text(min_x, min_y, dataset.coco.cats[label.item()]["name"], c="r")
+    if scores is None:
+        scores = torch.ones(labels.shape)
+    fig, ax = plt.subplots(1, figsize=(12, 8))
+    ax.imshow(image)
+    for box, label, score in zip(boxes, labels, scores):
+        if score.item() < 0.5:
+            continue
+        [min_x, min_y, max_x, max_y] = box.tolist()
+        width = max_x - min_x
+        height = max_y - min_y
+        rect = patches.Rectangle(
+            (min_x, min_y),
+            width,
+            height,
+            linewidth=1,
+            edgecolor=color,
+            facecolor="none",
+        )
+        ax.add_patch(rect)
+        ax.text(
+            min_x,
+            min_y,
+            f'{dataset.coco.cats[label.item()]["name"]} ({score.item()})',
+            c=color,
+        )
 
+
+prediction_boxes = prediction[0]["boxes"]
+prediction_labels = prediction[0]["labels"]
+prediction_scores = prediction[0]["scores"]
+visualize_bounding_boxes(im, prediction_boxes, prediction_labels, prediction_scores)
+
+# %%
+visualize_bounding_boxes(
+    im, test_target["boxes"], test_target["labels"], None, color="g"
+)
 # %%
 torch.save(model, "detector.pt")

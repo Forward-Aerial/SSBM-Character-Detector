@@ -65,36 +65,6 @@ class RandomVerticalFlip(torchvision.transforms.RandomVerticalFlip):
         return flipped_image, target
 
 
-class ToFRCNNFormat(object):
-    """
-    Converts a CocoDetection target into a format that works for Faster R-CNN.
-    Does not modify the provided image.
-    """
-
-    def __call__(self, image, target):
-        boxes = []
-        labels = []
-        if not isinstance(target, list):
-            target = [target]
-        image_id = torch.tensor([target[0]["image_id"]])
-        for annotation in target:
-            [min_x, min_y, width, height] = annotation["bbox"]
-            max_x = min_x + width
-            max_y = min_y + height
-            box = [min_x, min_y, max_x, max_y]
-            label = annotation["category_id"]
-
-            boxes.append(box)
-            labels.append(label)
-
-        boxes_tensor = torch.Tensor(boxes)
-        labels_tensor = torch.tensor(labels, dtype=torch.int64)
-        return (
-            image,
-            {"boxes": boxes_tensor, "labels": labels_tensor, "image_id": image_id},
-        )
-
-
 class ToTensor(torchvision.transforms.ToTensor):
     """
     A modified version of torchvision ToTensor that accepts a target.

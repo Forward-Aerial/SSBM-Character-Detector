@@ -179,7 +179,7 @@ def main(tags_filepath: str):
             "info": INFO,
             "categories": CATEGORIES,
         },
-        open("data/annotations/instance_default.json", "w+"),
+        open("data/annotations/instances_default.json", "w+"),
     )
     shutil.rmtree("data/tbh7_purp_fox_vgbc",)
     shutil.rmtree("data/wiz_sfat")
