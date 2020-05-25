@@ -3,7 +3,6 @@ Transformations that are applied identically to both the image and the target.
 """
 import random
 
-import torch
 import torchvision
 from torchvision.transforms import functional as F
 
@@ -34,7 +33,6 @@ class RandomGrayscale(torchvision.transforms.RandomGrayscale):
 class RandomHorizontalFlip(torchvision.transforms.RandomHorizontalFlip):
     """
     A modified version of the torchvision RandomHorizontalFlip that accepts a target.
-    Expects ToFRCNNFormat to be called beforehand.
     """
 
     def __call__(self, image, target):
@@ -51,7 +49,6 @@ class RandomHorizontalFlip(torchvision.transforms.RandomHorizontalFlip):
 class RandomVerticalFlip(torchvision.transforms.RandomVerticalFlip):
     """
     A modified version of the torchvision RandomVerticalFlip that accepts a target.
-    Expects ToFRCNNFormat to be called beforehand.
     """
 
     def __call__(self, image, target):
@@ -63,6 +60,17 @@ class RandomVerticalFlip(torchvision.transforms.RandomVerticalFlip):
         bbox[:, [1, 3]] = height - bbox[:, [3, 1]]
         target["boxes"] = bbox
         return flipped_image, target
+
+
+class ColorJitter(torchvision.transforms.ColorJitter):
+    """
+    A modified version of the torchvision ColorJitter that accepts a target.
+    Does not modify the target.
+    """
+
+    def __call__(self, image, target):
+        jittered_image = super().__call__(image)
+        return jittered_image, target
 
 
 class ToTensor(torchvision.transforms.ToTensor):

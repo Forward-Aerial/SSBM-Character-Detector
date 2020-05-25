@@ -10,7 +10,14 @@ from coco_eval import CocoEvaluator
 import utils
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
+def train_one_epoch(
+    model: torchvision.models.detection.FasterRCNN,
+    optimizer: torch.optim.Optimizer,
+    data_loader: torch.utils.data.DataLoader,
+    device,
+    epoch: int,
+    print_freq: int,
+):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value:.6f}"))
@@ -66,7 +73,11 @@ def _get_iou_types(model):
 
 
 @torch.no_grad()
-def evaluate(model, data_loader, device):
+def evaluate(
+    model: torchvision.models.detection.FasterRCNN,
+    data_loader: torch.utils.data.DataLoader,
+    device,
+):
     n_threads = torch.get_num_threads()
     # FIXME remove this and make paste_masks_in_image run on the GPU
     torch.set_num_threads(1)
@@ -75,8 +86,8 @@ def evaluate(model, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
 
-    coco = get_coco_api_from_dataset(data_loader.dataset)
     iou_types = _get_iou_types(model)
+    coco = get_coco_api_from_dataset(data_loader.dataset)
     coco_evaluator = CocoEvaluator(coco, iou_types)
 
     for image, targets in metric_logger.log_every(data_loader, 100, header):

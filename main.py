@@ -1,6 +1,7 @@
 # %%
-import matplotlib.patches as patches
 import random
+
+import matplotlib.patches as patches
 import torch
 import torchvision
 from matplotlib import pyplot as plt
@@ -28,12 +29,12 @@ def get_detection_model(classes: int):
 
 # %%
 # use our dataset and defined transformations
+transformations = T.Compose([T.RandomHorizontalFlip(), T.ToTensor()])
+
 dataset = dataset.FRCNNFrameDataset(
     "data/images",
     "data/annotations/instances_default.json",
-    transforms=T.Compose(
-        [T.RandomGrayscale(), T.RandomHorizontalFlip(), T.ToTensor(),]
-    ),
+    transforms=transformations,
 )
 
 # split the dataset in train and test set
@@ -62,10 +63,9 @@ data_loader_test = torch.utils.data.DataLoader(
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 # our dataset has two classes only - background and person
-num_classes = len(dataset.coco.cats.keys())
 
 # get the model using our helper function
-model = get_detection_model(num_classes)
+model = get_detection_model(len(dataset.coco.cats.keys()))
 # move model to the right device
 model.to(device)
 
@@ -85,7 +85,7 @@ for epoch in range(num_epochs):
     # update the learning rate
     lr_scheduler.step()
     # evaluate on the test dataset
-    evaluate(model, data_loader_test, device=device)
+    evaluate(model, data_loader_test, device, dataset.coco)
 
 # %%
 img_tensor, test_target = dataset_test[random.randint(0, len(dataset_test))]
@@ -98,13 +98,13 @@ with torch.no_grad():
 
 im = Image.fromarray(img_tensor.mul(255).permute(1, 2, 0).byte().numpy())
 
-# %%
+
 def visualize_bounding_boxes(
     image: Image, boxes: torch.Tensor, labels: torch.Tensor, scores, color="r"
 ):
     if scores is None:
         scores = torch.ones(labels.shape)
-    fig, ax = plt.subplots(1, figsize=(12, 8))
+    _, ax = plt.subplots(1, figsize=(12, 8))
     ax.imshow(image)
     for box, label, score in zip(boxes, labels, scores):
         if score.item() < 0.5:
@@ -134,7 +134,7 @@ prediction_labels = prediction[0]["labels"]
 prediction_scores = prediction[0]["scores"]
 visualize_bounding_boxes(im, prediction_boxes, prediction_labels, prediction_scores)
 
-# %%
+
 visualize_bounding_boxes(
     im, test_target["boxes"], test_target["labels"], None, color="g"
 )
