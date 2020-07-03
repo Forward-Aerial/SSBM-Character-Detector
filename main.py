@@ -17,6 +17,8 @@ import utils
 TRAIN_BATCH_SIZE = 4
 TEST_BATCH_SIZE = 1
 
+PRINT_FREQUENCY = 50
+
 # %%
 from engine import evaluate, train_one_epoch
 
@@ -87,7 +89,7 @@ num_epochs = 4
 
 for epoch in range(num_epochs):
     # train for one epoch, printing every 10 iterations
-    train_one_epoch(model, optimizer, data_loader_train, device, epoch, print_freq=10)
+    train_one_epoch(model, optimizer, data_loader_train, device, epoch, print_freq=PRINT_FREQUENCY)
     # update the learning rate
     lr_scheduler.step()
     # evaluate on the test dataset
