@@ -14,6 +14,9 @@ import dataset
 import transforms as T
 import utils
 
+TRAIN_BATCH_SIZE = 4
+TEST_BATCH_SIZE = 1
+
 # %%
 from engine import evaluate, train_one_epoch
 
@@ -47,7 +50,7 @@ dataset_train, dataset_test = torch.utils.data.random_split(dataset, lengths)
 # define training and validation data loaders
 data_loader_train = torch.utils.data.DataLoader(
     dataset_train,
-    batch_size=2,
+    batch_size=TRAIN_BATCH_SIZE,
     shuffle=True,
     num_workers=4,
     collate_fn=utils.collate_fn,
@@ -55,7 +58,7 @@ data_loader_train = torch.utils.data.DataLoader(
 
 data_loader_test = torch.utils.data.DataLoader(
     dataset_test,
-    batch_size=1,
+    batch_size=TEST_BATCH_SIZE,
     shuffle=False,
     num_workers=4,
     collate_fn=utils.collate_fn,
