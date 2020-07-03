@@ -67,3 +67,20 @@ class FRCNNFrameDataset(datasets.CocoDetection):
         if self.transforms is not None:
             img, frcnn_target = self.transforms(img, frcnn_target)
         return (img, frcnn_target)
+
+
+class FRCNNFrameCharacterDataset(FRCNNFrameDataset):
+    """
+    Sets all of the labels of examples as "CHARACTER".
+    """
+
+    def __getitem__(self, index):
+        (img, frcnn_target) = super().__getitem__(index)
+        character_label_id = list(self.coco.cats.keys())[-1]
+        old_labels_tensor: torch.Tensor = frcnn_target["labels"]
+        frcnn_target["labels"] = torch.tensor(
+            [character_label_id for _ in range(old_labels_tensor.shape[0])],
+            dtype=torch.int64,
+        )
+        print(frcnn_target)
+        return (img, frcnn_target)

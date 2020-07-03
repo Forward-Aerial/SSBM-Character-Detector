@@ -50,6 +50,7 @@ CHARACTER_NAMES = [
     "Yoshi",
     "Young Link",
     "Zelda",
+    "CHARACTER"
 ]
 CATEGORIES = [
     {"name": character_name, "supercategory": "", "id": i}

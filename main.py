@@ -1,5 +1,6 @@
 # %%
 import random
+import time
 
 import matplotlib.patches as patches
 import torch
@@ -7,6 +8,7 @@ import torchvision
 from matplotlib import pyplot as plt
 from PIL import Image
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+from coco_eval import CocoEvaluator
 
 import dataset
 import transforms as T
@@ -29,7 +31,7 @@ def get_detection_model(classes: int):
 
 # %%
 # use our dataset and defined transformations
-transformations = T.Compose([T.RandomHorizontalFlip(), T.ToTensor()])
+transformations = T.Compose([T.RandomHorizontalFlip(), T.RandomGrayscale(), T.ToTensor()])
 
 dataset = dataset.FRCNNFrameDataset(
     "data/images",
@@ -61,6 +63,7 @@ data_loader_test = torch.utils.data.DataLoader(
 
 # %%
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+print(f"Running on {device}")
 
 # our dataset has two classes only - background and person
 
@@ -77,7 +80,7 @@ optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
 # 10x every 3 epochs
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 # %%
-num_epochs = 7
+num_epochs = 4
 
 for epoch in range(num_epochs):
     # train for one epoch, printing every 10 iterations
@@ -85,11 +88,11 @@ for epoch in range(num_epochs):
     # update the learning rate
     lr_scheduler.step()
     # evaluate on the test dataset
-    evaluate(model, data_loader_test, device, dataset.coco)
+    coco_evaluator: CocoEvaluator = evaluate(model, data_loader_test, device)
 
 # %%
-img_tensor, test_target = dataset_test[random.randint(0, len(dataset_test))]
-to_tensor = T.ToTensor()
+idx = random.randint(0, len(dataset_test))
+img_tensor, test_target = dataset_test[idx]
 # put the model in evaluation mode
 model.eval()
 with torch.no_grad():
@@ -140,3 +143,7 @@ visualize_bounding_boxes(
 )
 # %%
 torch.save(model, "detector.pt")
+
+for i in range(5):
+    print('\a')
+    time.sleep(1)
