@@ -46,6 +46,7 @@ def train_one_epoch(
 
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
+            print(targets)
             print(loss_dict_reduced)
             sys.exit(1)
 

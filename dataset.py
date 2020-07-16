@@ -9,6 +9,19 @@ class FRCNNFrameDataset(datasets.CocoDetection):
     Changes output of CocoDetection to fit FRCNN format requirements.
     """
 
+    def construct_negative_example(self, img_id: int):
+        """
+        Constructs a negative example (where no objects are present).
+        """
+        boxes = torch.zeros((0, 4), dtype=torch.float32)
+        return {
+            "boxes": boxes,
+            "labels": torch.zeros((1, 1), dtype=torch.int64),
+            "image_id": torch.tensor([img_id]),
+            "area": (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0]),
+            "iscrowd": torch.zeros((0,), dtype=torch.int64),
+        }
+
     def coco_target_to_frcnn(self, coco_target):
         """
         Converts a COCO target into an FRCNN target.
@@ -36,19 +49,6 @@ class FRCNNFrameDataset(datasets.CocoDetection):
             "image_id": image_id,
         }
 
-    def construct_negative_example(self, img_id: int):
-        """
-        Constructs a negative example (where no objects are present).
-        """
-        boxes = torch.zeros((0, 4), dtype=torch.float32)
-        return {
-            "boxes": boxes,
-            "labels": torch.zeros((1, 1), dtype=torch.int64),
-            "image_id": torch.tensor([img_id]),
-            "area": (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0]),
-            "iscrowd": torch.zeros((0,), dtype=torch.int64),
-        }
-
     def __getitem__(self, index):
         coco = self.coco
         img_id = self.ids[index]
@@ -66,21 +66,4 @@ class FRCNNFrameDataset(datasets.CocoDetection):
             frcnn_target = self.coco_target_to_frcnn(target)
         if self.transforms is not None:
             img, frcnn_target = self.transforms(img, frcnn_target)
-        return (img, frcnn_target)
-
-
-class FRCNNFrameCharacterDataset(FRCNNFrameDataset):
-    """
-    Sets all of the labels of examples as "CHARACTER".
-    """
-
-    def __getitem__(self, index):
-        (img, frcnn_target) = super().__getitem__(index)
-        character_label_id = list(self.coco.cats.keys())[-1]
-        old_labels_tensor: torch.Tensor = frcnn_target["labels"]
-        frcnn_target["labels"] = torch.tensor(
-            [character_label_id for _ in range(old_labels_tensor.shape[0])],
-            dtype=torch.int64,
-        )
-        print(frcnn_target)
         return (img, frcnn_target)

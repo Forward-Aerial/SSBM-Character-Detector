@@ -36,7 +36,14 @@ def get_detection_model(classes: int):
 
 # %%
 # use our dataset and defined transformations
-transformations = T.Compose([T.RandomHorizontalFlip(), T.RandomGrayscale(), T.ToTensor()])
+transformations = T.Compose(
+    [
+        T.RandomHorizontalFlip(),
+        T.RandomGrayscale(),
+        T.RandomResizedCrop(size=(256, 256)),
+        T.ToTensor(),
+    ]
+)
 
 dataset = dataset.FRCNNFrameDataset(
     "data/images",
@@ -47,6 +54,7 @@ dataset = dataset.FRCNNFrameDataset(
 # split the dataset in train and test set
 torch.manual_seed(1)
 lengths = [round(len(dataset) * 0.8), round(len(dataset) * 0.2)]
+print(lengths)
 dataset_train, dataset_test = torch.utils.data.random_split(dataset, lengths)
 
 # define training and validation data loaders
@@ -85,11 +93,13 @@ optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
 # 10x every 3 epochs
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 # %%
-num_epochs = 4
+num_epochs = 5
 
 for epoch in range(num_epochs):
     # train for one epoch, printing every 10 iterations
-    train_one_epoch(model, optimizer, data_loader_train, device, epoch, print_freq=PRINT_FREQUENCY)
+    train_one_epoch(
+        model, optimizer, data_loader_train, device, epoch, print_freq=PRINT_FREQUENCY
+    )
     # update the learning rate
     lr_scheduler.step()
     # evaluate on the test dataset
@@ -150,5 +160,5 @@ visualize_bounding_boxes(
 torch.save(model, "detector.pt")
 
 for i in range(5):
-    print('\a')
+    print("\a")
     time.sleep(1)
