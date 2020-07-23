@@ -20,7 +20,7 @@ TEST_BATCH_SIZE = 1
 PRINT_FREQUENCY = 50
 
 # %%
-from engine import evaluate, train_one_epoch
+from engine import evaluate, train_one_epoch, WeirdLossException
 
 
 def get_detection_model(classes: int):
@@ -40,7 +40,8 @@ transformations = T.Compose(
     [
         T.RandomHorizontalFlip(),
         T.RandomGrayscale(),
-        T.RandomResizedCrop(size=(256, 256)),
+        T.ColorJitter(),
+        # T.RandomResizedCrop(size=(256, 256)),
         T.ToTensor(),
     ]
 )
@@ -92,31 +93,8 @@ optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9, weight_decay=0.0005)
 # and a learning rate scheduler which decreases the learning rate by
 # 10x every 3 epochs
 lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
-# %%
-num_epochs = 5
-
-for epoch in range(num_epochs):
-    # train for one epoch, printing every 10 iterations
-    train_one_epoch(
-        model, optimizer, data_loader_train, device, epoch, print_freq=PRINT_FREQUENCY
-    )
-    # update the learning rate
-    lr_scheduler.step()
-    # evaluate on the test dataset
-    coco_evaluator: CocoEvaluator = evaluate(model, data_loader_test, device)
 
 # %%
-idx = random.randint(0, len(dataset_test))
-img_tensor, test_target = dataset_test[idx]
-# put the model in evaluation mode
-model.eval()
-with torch.no_grad():
-    prediction = model([img_tensor.to(device)])
-
-
-im = Image.fromarray(img_tensor.mul(255).permute(1, 2, 0).byte().numpy())
-
-
 def visualize_bounding_boxes(
     image: Image, boxes: torch.Tensor, labels: torch.Tensor, scores, color="r"
 ):
@@ -146,6 +124,48 @@ def visualize_bounding_boxes(
             c=color,
         )
 
+
+# %%
+num_epochs = 5
+
+for epoch in range(num_epochs):
+    # train for one epoch, printing every 10 iterations
+    try:
+        train_one_epoch(
+            model,
+            optimizer,
+            data_loader_train,
+            device,
+            epoch,
+            print_freq=PRINT_FREQUENCY,
+        )
+    except WeirdLossException as e:
+        
+        for img_tensor, target in zip(e.images, e.targets):
+            print(target)
+            im = Image.fromarray(img_tensor.cpu().mul(255).permute(1, 2, 0).byte().numpy())
+            visualize_bounding_boxes(
+                im, target["boxes"], target["labels"], None, color="r"
+            )
+            plt.show()
+            plt.waitforbuttonpress()
+        raise Exception("Weird loss")
+
+    # update the learning rate
+    lr_scheduler.step()
+    # evaluate on the test dataset
+    coco_evaluator: CocoEvaluator = evaluate(model, data_loader_test, device)
+
+# %%
+idx = random.randint(0, len(dataset_test))
+img_tensor, test_target = dataset_test[idx]
+# put the model in evaluation mode
+model.eval()
+with torch.no_grad():
+    prediction = model([img_tensor.to(device)])
+
+
+im = Image.fromarray(img_tensor.mul(255).permute(1, 2, 0).byte().numpy())
 
 prediction_boxes = prediction[0]["boxes"]
 prediction_labels = prediction[0]["labels"]

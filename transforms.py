@@ -151,7 +151,8 @@ class RandomResizedCrop(torchvision.transforms.RandomResizedCrop):
             scale: range of size of the origin size cropped
             ratio: range of aspect ratio of the origin aspect ratio cropped
         """
-        top, left, bot, right = super().get_params(img, scale, ratio)
+        top, left, bot, right = torchvision.transforms.RandomResizedCrop.get_params(img, scale, ratio)
+        print("PARAMS =", (top, left, bot, right))
         width, height = img.size
         # print(f"h = {height} w={width}")
         # top, left, bot, right = (0,0, height, width)
@@ -208,6 +209,7 @@ class RandomResizedCrop(torchvision.transforms.RandomResizedCrop):
             if ((boxtop - boxbot) * (boxright - boxleft)) == 0:
                 continue
 
+            # Point ordering should match https://pytorch.org/docs/stable/_modules/torchvision/models/detection/faster_rcnn.html#fasterrcnn_resnet50_fpn
             final_boxlist.append([boxleft, boxtop, boxright, boxbot])
             final_labels.append(label)
 
