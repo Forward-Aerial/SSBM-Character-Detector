@@ -3,6 +3,7 @@ import random
 import time
 
 import matplotlib.patches as patches
+import numpy as np
 import torch
 import torchvision
 from matplotlib import pyplot as plt
@@ -46,21 +47,40 @@ transformations = T.Compose(
     ]
 )
 
-dataset = dataset.FRCNNFrameDataset(
+test_transformations = T.Compose(
+    [
+        T.ToTensor(),
+    ]
+)
+
+dataset_train = dataset.FRCNNFrameDataset(
     "data/images",
     "data/annotations/instances_default.json",
     transforms=transformations,
 )
 
+dataset_test = dataset.FRCNNFrameDataset(
+    "data/images",
+    "data/annotations/instances_default.json",
+    transforms=test_transformations,
+)
+
 # split the dataset in train and test set
 torch.manual_seed(1)
-lengths = [round(len(dataset) * 0.8), round(len(dataset) * 0.2)]
+lengths = [round(len(dataset_train) * 0.8), round(len(dataset_train) * 0.2)]
 print(lengths)
-dataset_train, dataset_test = torch.utils.data.random_split(dataset, lengths)
+length = np.arange(len(dataset_train))
+# comment out this line if you don't want to permute the training and test set
+length = np.random.permutation(length)
+
+split_at = round(len(dataset_train) * 0.8)
+datasubset_train = torch.utils.data.Subset(dataset_train, length[:split_at])
+datasubset_test = torch.utils.data.Subset(dataset_test, length[split_at:])
+# dataset_train, dataset_test = torch.utils.data.random_split(dataset, lengths)
 
 # define training and validation data loaders
 data_loader_train = torch.utils.data.DataLoader(
-    dataset_train,
+    datasubset_train,
     batch_size=TRAIN_BATCH_SIZE,
     shuffle=True,
     num_workers=4,
@@ -68,7 +88,7 @@ data_loader_train = torch.utils.data.DataLoader(
 )
 
 data_loader_test = torch.utils.data.DataLoader(
-    dataset_test,
+    datasubset_test,
     batch_size=TEST_BATCH_SIZE,
     shuffle=False,
     num_workers=4,
@@ -82,7 +102,7 @@ print(f"Running on {device}")
 # our dataset has two classes only - background and person
 
 # get the model using our helper function
-model = get_detection_model(len(dataset.coco.cats.keys()))
+model = get_detection_model(len(dataset_train.coco.cats.keys()))
 # move model to the right device
 model.to(device)
 
