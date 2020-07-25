@@ -41,7 +41,7 @@ transformations = T.Compose(
         T.RandomHorizontalFlip(),
         T.RandomGrayscale(),
         T.ColorJitter(),
-        # T.RandomResizedCrop(size=(256, 256)),
+        T.RandomResizedCrop(size=(256, 256)),
         T.ToTensor(),
     ]
 )
