@@ -151,34 +151,26 @@ class RandomResizedCrop(torchvision.transforms.RandomResizedCrop):
             scale: range of size of the origin size cropped
             ratio: range of aspect ratio of the origin aspect ratio cropped
         """
-        top, left, bot, right = torchvision.transforms.RandomResizedCrop.get_params(img, scale, ratio)
-        #print("PARAMS =", (top, left, bot, right))
-        width, height = img.size
-        # print(f"h = {height} w={width}")
-        # top, left, bot, right = (0,0, height, width)
-        # print("top, left, bot, right",top, left, bot, right)
-        # does crop then resize
-        # separated to make operations explicit
-        img = F.crop(img, top, left, bot, right)
-        img = F.resize(img, size=size, interpolation=interpolation)
-        # equivalent one line expression
-        # img = F.resized_crop(img, top, left, bot, right, size=size, interpolation=interpolation)
+        top, left, bot, right = torchvision.transforms.RandomResizedCrop.get_params(
+            img, scale, ratio
+        )
+        img = F.resized_crop(
+            img, top, left, bot, right, size=size, interpolation=interpolation
+        )
 
         final_boxlist = []
         final_labels = []
-        # Assumes box list is [[top, left, bot, right], ...]
+        # Assumes box list is [[left, top, right, bot], ...]
         for box, label in zip(bboxes, labels):
-            # boxtop, boxleft, boxbot, boxright = box
             boxleft, boxtop, boxright, boxbot = box
 
-            # remove cropped boxes
+            # remove out-of-frame boxes
             if (
                 (left >= boxright)
                 or (top >= boxbot)
                 or ((top + bot + 1) <= boxtop)
                 or ((left + right + 1) <= boxleft)
             ):
-                # print("continuing")
                 continue
 
             # cropping
@@ -191,7 +183,7 @@ class RandomResizedCrop(torchvision.transforms.RandomResizedCrop):
             else:
                 boxleft -= left
             if (top + bot) <= boxbot:
-                boxbot = bot 
+                boxbot = bot
             else:
                 boxbot -= top
             if (left + right) <= boxright:
@@ -227,7 +219,7 @@ class RandomResizedCrop(torchvision.transforms.RandomResizedCrop):
         )
         boxes_tensor = torch.Tensor(remaining_bboxes)
         if len(boxes_tensor) == 0:
-            # We cropped out all the boxes. Oops. Return none
+            # We cropped out all the boxes. Oops. Return empty target
             return (
                 resized_cropped_img,
                 self.construct_negative_example(target["image_id"]),

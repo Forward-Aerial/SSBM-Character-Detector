@@ -9,11 +9,12 @@ import torchvision
 from matplotlib import pyplot as plt
 from PIL import Image
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-from coco_eval import CocoEvaluator
 
 import dataset
 import transforms as T
 import utils
+from coco_eval import CocoEvaluator
+from engine import WeirdLossException, evaluate, train_one_epoch
 
 TRAIN_BATCH_SIZE = 4
 TEST_BATCH_SIZE = 1
@@ -21,7 +22,6 @@ TEST_BATCH_SIZE = 1
 PRINT_FREQUENCY = 50
 
 # %%
-from engine import evaluate, train_one_epoch, WeirdLossException
 
 
 def get_detection_model(classes: int):
@@ -47,11 +47,7 @@ transformations = T.Compose(
     ]
 )
 
-test_transformations = T.Compose(
-    [
-        T.ToTensor(),
-    ]
-)
+test_transformations = T.Compose([T.ToTensor(),])
 
 dataset_train = dataset.FRCNNFrameDataset(
     "data/images",
@@ -67,8 +63,6 @@ dataset_test = dataset.FRCNNFrameDataset(
 
 # split the dataset in train and test set
 torch.manual_seed(1)
-lengths = [round(len(dataset_train) * 0.8), round(len(dataset_train) * 0.2)]
-print(lengths)
 length = np.arange(len(dataset_train))
 # comment out this line if you don't want to permute the training and test set
 length = np.random.permutation(length)
@@ -76,7 +70,6 @@ length = np.random.permutation(length)
 split_at = round(len(dataset_train) * 0.8)
 datasubset_train = torch.utils.data.Subset(dataset_train, length[:split_at])
 datasubset_test = torch.utils.data.Subset(dataset_test, length[split_at:])
-# dataset_train, dataset_test = torch.utils.data.random_split(dataset, lengths)
 
 # define training and validation data loaders
 data_loader_train = torch.utils.data.DataLoader(
@@ -98,8 +91,6 @@ data_loader_test = torch.utils.data.DataLoader(
 # %%
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 print(f"Running on {device}")
-
-# our dataset has two classes only - background and person
 
 # get the model using our helper function
 model = get_detection_model(len(dataset_train.coco.cats.keys()))
@@ -140,7 +131,7 @@ def visualize_bounding_boxes(
         ax.text(
             min_x,
             min_y,
-            f'{dataset.coco.cats[label.item()]["name"]} ({score.item()})',
+            f'{dataset_train.coco.cats[label.item()]["name"]} ({score.item()})',
             c=color,
         )
 
@@ -160,10 +151,12 @@ for epoch in range(num_epochs):
             print_freq=PRINT_FREQUENCY,
         )
     except WeirdLossException as e:
-        
+
         for img_tensor, target in zip(e.images, e.targets):
             print(target)
-            im = Image.fromarray(img_tensor.cpu().mul(255).permute(1, 2, 0).byte().numpy())
+            im = Image.fromarray(
+                img_tensor.cpu().mul(255).permute(1, 2, 0).byte().numpy()
+            )
             visualize_bounding_boxes(
                 im, target["boxes"], target["labels"], None, color="r"
             )
