@@ -137,7 +137,7 @@ def visualize_bounding_boxes(
 
 
 # %%
-num_epochs = 5
+num_epochs = 7
 
 for epoch in range(num_epochs):
     # train for one epoch, printing every 10 iterations
