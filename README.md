@@ -12,7 +12,9 @@ Because of size constraints (~13GB), I'm not going to be distributing the datase
 If you DON'T have input data, you can download Adam Spannbauer's labeled dataset (though it's only labels of purple Fox), accessible at the link above. To convert his dataset into COCO format, just run `utils/convert_txt_to_coco.py`.
 
 ## Dependencies
+
 All listed dependencies are for Ubuntu 20.04
+
 1. Python 3.8
 2. CUDA 10.0
 3. Everything in `requirements.txt`
@@ -21,5 +23,5 @@ All listed dependencies are for Ubuntu 20.04
 ## Running the Script
 
 Just run `main.py`, which is modified from [this tutorial](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html#testing-forward-method-optional).
-For those who care, it creates an F-RCNN model with a ResNet-50 backbone (that uses a Feature Proposal Network).
+For those who care, it creates a DETR model.
 I have no idea what that means, but it sure sounds cool!
